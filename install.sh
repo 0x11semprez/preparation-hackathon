@@ -325,5 +325,6 @@ echo ""
 echo -e "${G}  ✓ radegast ready — make dev${N}"
 echo ""
 
+git add . && git commit -m "Dev is ready" && git push origin main
 git checkout -b dev main
 echo "✓ dev branch is ok"
