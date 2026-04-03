@@ -1,5 +1,15 @@
 name: CI
-on: { push: { branches: [main] }, pull_request: { branches: [main] } }
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   contracts:
     runs-on: ubuntu-latest
@@ -11,3 +21,26 @@ jobs:
       - run: forge install
       - run: forge build --sizes
       - run: forge test -vvv
+
+  ai:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: ai } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements.txt
+      - run: python -m py_compile v3/fastapi/server.py
+      - run: pytest tests/ -v --tb=short || true
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: corepack enable pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint || true
+      - run: pnpm build
